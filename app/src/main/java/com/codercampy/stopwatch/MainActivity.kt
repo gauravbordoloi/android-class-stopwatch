@@ -1,8 +1,13 @@
 package com.codercampy.stopwatch
 
+import android.content.Context
+import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import com.codercampy.stopwatch.databinding.ActivityMainBinding
@@ -17,18 +22,85 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+    private lateinit var sharedPref: SharedPreferences
+    private lateinit var editor: SharedPreferences.Editor
+
     private lateinit var binding: ActivityMainBinding
 
     private var time: Long = 0
     private var laps = ""
     private var currentState: Int = STATE_IDLE
 
+    override fun onDestroy() {
+        super.onDestroy()
+    }
+
+    override fun onPause() {
+        super.onPause()
+    }
+
+    override fun onStart() {
+        super.onStart()
+
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu_main, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (item.itemId == R.id.view_history) {
+            val intent = Intent(this, SecondActivity::class.java)
+            intent.putExtra("laps", laps)
+            startActivity(intent)
+        }
+        return super.onOptionsItemSelected(item)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        sharedPref  = this.getSharedPreferences("abc", Context.MODE_PRIVATE)
+        editor = sharedPref.edit()
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        setSupportActionBar(binding.toolbar)
+
+        val oldData = sharedPref.getString("laps", "")
+        if (!oldData.isNullOrEmpty()) {
+            binding.textLaps.text = oldData
+        }
+
+        binding.viewLaps.setOnClickListener {
+
+            //Navigate to second activity
+            val intent = Intent(this, SecondActivity::class.java)
+            intent.putExtra("laps", laps)
+
+            val student = Student("Purab", 25)
+            val student2 = Student("Pragyan", 26)
+
+            val students = ArrayList<Student>()
+            students.add(student)
+            students.add(student2)
+
+            intent.putExtra("student", student)
+            intent.putParcelableArrayListExtra(
+                "students",
+                students
+            )
+
+            startActivity(intent)
+
+        }
 
         binding.btn1.setOnClickListener {
             when (currentState) {
@@ -44,6 +116,13 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 STATE_STOP -> {
+                    if (laps.isNotEmpty()) {
+                        editor.putString("laps", laps)
+                        editor.commit()
+
+                        editor.putString("laps", null)
+                    }
+
                     currentState = STATE_IDLE
                     updateState()
                 }
@@ -72,7 +151,7 @@ class MainActivity : AppCompatActivity() {
                 binding.btn2.visibility = View.GONE
 
                 binding.tvText.text = "00:00:000"
-                binding.textLaps.text = ""
+                //binding.textLaps.text = ""
                 time = 0
                 laps = ""
             }
